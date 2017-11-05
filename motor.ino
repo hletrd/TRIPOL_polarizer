@@ -8,12 +8,17 @@
 #define thmin 200 //Min threshold for optical encoder
 
 
-#define pinCW 2 //PD1
-#define pinCCW 3 //PD0
+#define pinCCW 2 //PD1, pin for rotation
 #define pinENCODER 0 //PF7
 
 //120 / 45 gearing, 1/16 microstep, 200step/rev motor
 #define stepperrev 8533.333333333333333333333333
+
+
+
+#define userawport true 
+#define CCWHIGH B00000100
+#define CCWLOW B00000000
 
 
 #include <TimerOne.h>
@@ -48,20 +53,32 @@ void movestepper() {
       changeTimer();
     }
     for (int i = 0; i < speedfactor; i++) {
+#if useRawPort == true
+      PORTD = CCWLOW;
+#else
       digitalWrite(pinCCW, LOW);
+#endif
       delayMicroseconds(5);
+#if useRawPort == true
+      PORTD = CCWHIGH;
+#else
       digitalWrite(pinCCW, HIGH);
+#endif
       delayMicroseconds(5);
       posnow += 1;
     }
+#if useRawPort == true
+    PORTD = CCWLOW;
+#else
     digitalWrite(pinCCW, LOW);
+#endif
   } else {
     spd = minspeed;
     changeTimer();
   }
 }
 
-void changeTimer() {
+inline void changeTimer() {
   if (spd != oldspd) {
     oldspd = spd;
     interval = (uint32_t) (1000000. / spd);
@@ -85,7 +102,6 @@ void setup() {
 
   MAXSPEED = (uint32_t) MAXSPEED_RPM * stepperrev / 60;
 
-  pinMode(pinCW, OUTPUT);
   pinMode(pinCCW, OUTPUT);
   
   Timer1.initialize();
