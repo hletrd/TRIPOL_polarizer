@@ -1,10 +1,16 @@
+#define MAXSPEED_RPM 20 //as rpm
+#define speedfactor 1 //microstep to go for single timer event
+#define minspeed 5 //minimum speed (steps/sec)
+#define ACCRATE 1500 //Acceleration rate
+#define DACCRATE 1500 //Deacceleration rate
+
+#define thmax 700 //Max threshold for optical encoder
+#define thmin 200 //Min threshold for optical encoder
+
+
 #define pinCW 2 //PD1
 #define pinCCW 3 //PD0
 #define pinENCODER 0 //PF7
-
-#define MAXSPEED_RPM 20 //as rpm
-#define speedfactor 1 //microstep to go for single timer event
-#define minspeed 5
 
 //120 / 45 gearing, 1/16 microstep, 200step/rev motor
 #define stepperrev 8533.333333333333333333333333
@@ -68,9 +74,9 @@ void setup() {
   Serial.begin(115200);
   spd = minspeed;
   oldspd = 0;
-  interval = 100000;
-  acc = 1500;
-  dacc = 1500;
+  interval = (int)(1000000./minspeed);
+  acc = ACCRATE;
+  dacc = DACCRATE;
 
   posto = 0;
   posnow = 0;
@@ -142,7 +148,7 @@ void loop() {
   encoder[2] = (analogRead(0)+analogRead(0)) / 2;
 
   if (timenow > timeold[1]+50) {
-    if (encoder[2] > 700 && encoder[1] > 700 && encoder[0] < 200) {
+    if (encoder[2] > thmax && encoder[1] > thmax && encoder[0] < thmin) {
       timeold[1] = timenow;
       Serial.println("Encoder pulse");
       posnow = 0;
