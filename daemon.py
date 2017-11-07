@@ -23,10 +23,12 @@ def get_angle_to():
 @app.route('/open/<path:port>')
 def open_serial(port):
 	serialhandler.connect(port[1:])
+	return '1'
 
 @app.route('/move/<string:angle>')
 def move_angle(angle):
-	serialhandler.move_angle(float(angle))
+	serialhandler.move_angle(str(float(angle)))
+	return '1'
 
 @app.route('/static/<path:path>')
 def send_static(path):
@@ -53,13 +55,17 @@ class SerialHandler(object):
 		threading.Timer(0.2, self.read_serial).start()
 
 	def move_angle(self, angle):
-		self.Serial.write(angle)
+		self.Serial.write(angle.encode('utf-8'))
 		self.angle_to = angle
 
 	def read_serial(self):
 		threading.Timer(0.2, self.read_serial).start()
-		while self.Serial.in_wating > 0:
-			self.q += Self.Serial.read().decode('utf-8')
+		try:
+			while self.Serial.in_wating > 0:
+				self.q += self.Serial.read().decode('utf-8')
+		except:
+			while self.Serial.inWaiting() > 0:
+				self.q += self.Serial.read(1).decode('utf-8')
 		splitted = self.q.split('\n\n')
 		last = splitted[len(splitted)-1]
 		if 'angpos:' in last and 'speed:' in last:
