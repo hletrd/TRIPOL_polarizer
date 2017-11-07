@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>TRIPOL filter</title>
+<script src="/static/jquery-3.2.1.min.js"></script>
+<link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+<script src="/static/bootstrap/js/bootstrap.min.js"></script>
+<style type="text/css">
+.window {
+	width: 600px;
+	height: 500px;
+	margin-top: 15px;
+}
+.spacer15 {
+	height: 15px;
+}
+</style>
+<script>
+"use strict";
+var fetchPos = function() {
+	$.get('/get/angle/now').done(function(data){
+		$('#position').html(data);
+	})
+	$.get('/get/angle/to').done(function(data){
+		$('#position-to').html(data);
+	})
+};
+
+$(document).ready(function() {
+	setInterval(fetchPos, 200);
+	$('#move').on('click', function() {
+		$.get('/move/' + $('#angle').val());
+	});
+	$('#connect').on('click', function() {
+		$.get('/open/~' + encodeURIComponent($('#port').val()));
+	});
+});
+</script>
+</head>
+<body>
+<div class="window">
+<div class="container">
+	<div class="row">
+		<div class="col">
+			<h4>TRIPOL filter controller</h4>
+		</div>
+	</div>
+	<div class="spacer15"></div>
+	<div class="row">
+		<div class="col-4">
+			<label>Serial port</label>
+		</div>
+		<div class="col-5">
+			<select id="port" class="custom-select">
+				{% for i in ports %}
+				<option value="{{i[0]}}">{{i[0]}}</option>
+				{% endfor %}
+			</select>
+		</div>
+	</div>
+	<div class="spacer15"></div>
+	<div class="row">
+		<div class="col-4">
+		</div>
+		<div class="col-5">
+			<button id="connect" class="btn btn-primary btn-block">Connect</button>
+		</div>
+	</div>
+	<div class="spacer15"></div>
+	<div class="row">
+		<div class="col-4">
+			<label>Position&nbsp;now&nbsp;(°)</label>
+		</div>
+		<div class="col-5">
+			<p id="position">0</p>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-4">
+			<label>Position&nbsp;desired&nbsp;(°)</label>
+		</div>
+		<div class="col-5">
+			<p id="position-to">0</p>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-4">
+			<label>Move (°)</label>
+		</div>
+		<div class="col-5">
+			<input id="angle" type="number" class="form-control" value="0.0">
+		</div>
+	</div>
+	<div class="spacer15"></div>
+	<div class="row">
+		<div class="col-4">
+		</div>
+		<div class="col-5">
+			<button id="move" class="btn btn-success btn-block">Move</button>
+		</div>
+	</div>
+</div>
+</div>
+</body>
+</html>
