@@ -85,7 +85,7 @@ void setup() {
   pinMode(PINSTEP, OUTPUT);
 
   Serial.println("Init");
-
+  
   Timer1.initialize();
   setTimer();
 
@@ -152,7 +152,7 @@ void loop() {
     Serial.println(speed);
   }
 
-  if (timenow >= timeold_enc + 1`) {
+  if (timenow >= timeold_enc + 1) {
     timeold_enc = timenow;
     encoder[0] = encoder[1];
     encoder[1] = encoder[2];
