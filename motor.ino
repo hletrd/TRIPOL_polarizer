@@ -118,7 +118,7 @@ void loop() {
       digit++;
     }
     
-    if (sum <= 36000.0) {
+    if (sum <= 36000.0 && ismoving == false) {
       Serial.print("\n\nmoveto:");
       Serial.println(sum);
       if (angpos < sum) {
