@@ -12,3 +12,9 @@
 
 * PC daemon to controller polarizer
 * ```static```, ```templates``` are directories to store resources.
+* Requires Flask, PySerial
+
+```bash
+$ pip install flask
+$ pip install pyserial
+```
