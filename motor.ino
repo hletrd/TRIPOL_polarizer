@@ -45,6 +45,8 @@ uint32_t maxspeed_steps; //maxspeed as steps per sec
 uint32_t timenow;
 uint32_t timeold_enc, timeold_log;
 
+bool ismoving;
+
 void setup() {
   Serial.begin(115200);
 
@@ -69,7 +71,8 @@ void setup() {
   stepperrev3 = (uint32_t) 3 * MICROSTEP * GEARING2 * STEPS / GEARING1;
   stepperrev1 = (uint32_t) MICROSTEP * GEARING2 * STEPS / GEARING1;
   
-
+  ismoving = false;
+  
   encoder[0] = analogRead(0);
   encoder[1] = analogRead(0);
   encoder[2] = analogRead(0);
@@ -77,7 +80,6 @@ void setup() {
   timenow = millis();
   timeold_enc = millis();
   timeold_log = millis();
-  
   
   
   pinMode(PINSTEP, OUTPUT);
@@ -126,12 +128,13 @@ void loop() {
       }
       abspos_to += (uint32_t)(angtorotate / 360.0 / 3.0 * stepperrev3);
       half = (uint32_t)(angtorotate / 360.0 / 3.0 * stepperrev3/2);
+      ismoving = true;
     } 
   }
   
   timenow = millis();
   
-  if (timenow > timeold_log+1000) {
+  if (timenow > timeold_log+200) {
     timeold_log = timenow;
     Serial.print("\n\nabspos_now:");
     Serial.println(abspos_now);
@@ -210,6 +213,7 @@ void movestepper() {
   } else {
     speed = MINSPEED;
     setTimer();
+    ismoving = false;
   }
 }
 
@@ -225,6 +229,7 @@ inline void setTimer() {
 void findEncoder() {
   abspos_to = stepperrev3;
   half = abspos_to / 2;
+  ismoving = true;
 
   while(true) {
     timenow = millis();
