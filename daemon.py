@@ -27,8 +27,10 @@ def open_serial(port):
 
 @app.route('/move/<string:angle>')
 def move_angle(angle):
-	serialhandler.move_angle(str(float(angle)))
-	return '1'
+	if (360 >= float(angle) >= 0):
+		serialhandler.move_angle(str(float(angle)))
+		return '1'
+	return '0'
 
 @app.route('/static/<path:path>')
 def send_static(path):

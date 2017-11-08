@@ -14,7 +14,7 @@
 #define STEPS 200 //motor steps per single rev
 
 #define PINSTEP 3 //PD1, pin for step
-#define PINENCODER //PF7, pin for encoder
+#define PINENCODER 0 //PF7, pin for encoder
 
 #define USERAWPORT TRUE
 #define STEPHIGH B00001000
@@ -80,7 +80,6 @@ void setup() {
   timenow = millis();
   timeold_enc = millis();
   timeold_log = millis();
-  
   
   pinMode(PINSTEP, OUTPUT);
 
@@ -239,7 +238,8 @@ void findEncoder() {
       
       encoder[0] = encoder[1];
       encoder[1] = encoder[2];
-      encoder[2] = (analogRead(0)+analogRead(0))/2;
+      encoder[2] = (analogRead(PINENCODER)+analogRead(PINENCODER))/2;
+      
       if (encoder[2] < OPTICALON && encoder[1] < OPTICALON && encoder[0] > OPTICALOFF) {
         Serial.println("Found encoder");
         posdiff = abspos_now;
