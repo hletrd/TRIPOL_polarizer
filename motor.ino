@@ -1,27 +1,43 @@
-#define MAXSPEED_RPM 20 //Max speed as rpm
+#define MAXSPEED_RPM 15 //Max speed as rpm
 
 #define SPEEDFACTOR 1 //step per single timer event
-#define MINSPEED 5 //minimum speed (steps/sec)
-#define ACCRATE 2000 //Acceleration rate (steps/sec^2)
-#define DACCRATE 2000 //Deacceleration rate (steps/sec^2)
+#define MINSPEED 1 //minimum speed (steps/sec)
+#define ACCRATE 500 //Acceleration rate (steps/sec^2)
+#define DACCRATE 500 //Deacceleration rate (steps/sec^2)
 
 #define OPTICALOFF 400 //Max threshold for optical encoder
 #define OPTICALON 100 //Min threshold for optical encoder
 
-#define MICROSTEP 16 //1/16 microstep drived
+#define MICROSTEP 16 //microstep drived
 #define GEARING1 45
 #define GEARING2 120
 #define STEPS 200 //motor steps per single rev
 
-#define PINSTEP 3 //PD1, pin for step
-#define PINENCODER 0 //PF7, pin for encoder
+#define PINDIR 4 //Pin for direction
+#define PINSTEP 3 //Pin for step
+#define PINENCODER 6 //Pin for encoder
 
-#define USERAWPORT TRUE
+#define USERAWPORT FALSE
 #define STEPHIGH B00001000
 #define STEPLOW B00000000
 
+//Motor microstep control pins
+#define pinM0 A1
+#define pinM1 12
+#define pinM2 13
+
+//Motor current control pins
+#define pinMCUR 11
+
+//Motor current as mA
+#define currentmA 3000
+
+#include <Wire.h>
+#include <U8x8lib.h>
 
 #include <TimerOne.h>
+
+U8X8_SSD1306_128X64_NONAME_HW_I2C u8x8(U8X8_PIN_NONE);
 
 uint32_t abspos_now; //Absolute position now (never decreases)
 uint32_t abspos_to; //Absolute position desired
@@ -47,12 +63,31 @@ uint32_t timeold_enc, timeold_log;
 
 bool ismoving;
 
+void u8drawstring(int x, int y, char* str) {
+  u8x8.draw2x2String(x, y, str);
+}
+
+void u8drawstring(int x, int y, String str) {
+  char tmp[20] = {0,};
+  str.toCharArray(tmp, str.length()+1);
+  u8x8.draw2x2String(x, y, tmp);
+}
+
 void setup() {
   Serial.begin(115200);
 
+  u8x8.begin();
+  u8x8.setPowerSave(0);
+  u8x8.setFont(u8x8_font_artossans8_r);
+  u8x8.setContrast(50);
+
+  u8drawstring(0, 0, "STEP");
+  u8drawstring(0, 4, "ANGLE");
+  
   abspos_now = 0;
   abspos_to = 0;
   relpos3 = 0;
+  
   revs3 = 0;
   posdiff = 0;
   angpos = 0.0;
@@ -73,15 +108,28 @@ void setup() {
   
   ismoving = false;
   
-  encoder[0] = analogRead(0);
-  encoder[1] = analogRead(0);
-  encoder[2] = analogRead(0);
+  encoder[0] = analogRead(PINENCODER);
+  encoder[1] = analogRead(PINENCODER);
+  encoder[2] = analogRead(PINENCODER);
 
   timenow = millis();
   timeold_enc = millis();
   timeold_log = millis();
-  
+
+  pinMode(PINDIR, OUTPUT);
   pinMode(PINSTEP, OUTPUT);
+
+  pinMode(pinM0, OUTPUT);
+  pinMode(pinM1, OUTPUT);
+  pinMode(pinM2, OUTPUT);
+
+  digitalWrite(PINDIR, HIGH);
+  digitalWrite(pinM0, LOW);
+  digitalWrite(pinM1, LOW);
+  digitalWrite(pinM2, HIGH);
+
+  //pinMode(pinMCUR, OUTPUT);
+  analogWrite(pinMCUR, (int)(currentmA/1000.*256./5./2.));
 
   Serial.println("Init");
   
@@ -98,7 +146,7 @@ void loop() {
     int digit = 0;
     float angtorotate;
     
-    delayMicroseconds(12);
+    delayMicroseconds(100);
     while (Serial.available() > 0) {
       tmp = Serial.read();
       if (digit > 0 && tmp != '.') sum *= 10;
@@ -108,7 +156,7 @@ void loop() {
         break;
       }
       digit++;
-      delayMicroseconds(12);
+      delayMicroseconds(100);
     }
     digit = 1;
     while (Serial.available() > 0) {
@@ -135,6 +183,12 @@ void loop() {
   
   if (timenow > timeold_log+200) {
     timeold_log = timenow;
+    String tmp = String(relpos3);
+    u8drawstring(0, 2, tmp);
+    tmp = String(angpos);
+    u8drawstring(0, 6, tmp);
+    
+    
     Serial.print("\n\nabspos_now:");
     Serial.println(abspos_now);
     Serial.print("abspos_to:");
@@ -155,7 +209,7 @@ void loop() {
     timeold_enc = timenow;
     encoder[0] = encoder[1];
     encoder[1] = encoder[2];
-    encoder[2] = (analogRead(0)+analogRead(0))/2;
+    encoder[2] = (analogRead(PINENCODER)+analogRead(PINENCODER))/2;
 
     if (encoder[2] < OPTICALON && encoder[1] < OPTICALON && encoder[0] > OPTICALOFF) {
       //Serial.print("Found encoder\nSync:");
